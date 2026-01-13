@@ -1,15 +1,35 @@
 import numpy as np
 from scipy.signal.windows import tukey
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 
 class beep:
 
     def __init__(self):
         self.fs = 44100.0
+        self.pitch_classes = ['c','c#','d','d#','e','f','f#','g','g#','a','a#','b']
+
+    def make_bip_1f(self, dur, freq, env):
+        self.dur = dur
+        self.freq = freq
+        self.Nt = int(self.dur * self.fs)    # number of time points
+        self.t_vec = np.linspace(0,self.dur,self.Nt) 
+        
+        self.env_amp = env  
+        self.osc = np.exp(1j*2*np.pi*self.freq * self.t_vec) 
+
+        # compress the oscillator bank into a single time series: waveform, wf
+        wf = self.osc * self.env_amp[:]
+        wf = wf/(np.max(np.abs(wf))) # normalize
+        self.wf = wf # assign to self
+        return wf # wf = waveform
     
     def make_bip(self, dur, freqs, envs):
         self.dur = dur
         self.freqs = freqs
+        if type(freqs) is not np.ndarray:
+            self.freqs = np.asarray([freqs]) # make it an array if a single frequency is given
         self.Nf = len(self.freqs)       # number of frequencies
         self.Nt = int(self.dur * self.fs)    # number of time points
         self.t_vec = np.linspace(0,self.dur,self.Nt) 
@@ -32,7 +52,7 @@ class beep:
         return wf # wf = waveform
     
 # =====================================
-# FUNCTIONS OUTSIDE THE CLASS
+# FUNCTIONS OUTSIDE THE BEEP CLASS
 # =====================================
 
 def sliding_gaussian(length, stds, means, x=None):
@@ -90,5 +110,58 @@ def plot_waveforms(ax1, ax2, t_short, wf_short, t_full, wf_full,
     ax2.set_ylabel(ylabel)
     #ax1.grid(True)
 
+def make_3pt_envelope(Npts,peak_posn):
+    envelope = np.zeros(Npts)
+    peak = int(Npts*peak_posn)
 
-    #ax2.grid(True)
+    # from 0 to the peak index (peak):
+    up = np.linspace(0,1,peak)
+    envelope[:peak] = up
+
+    # and fill in the rest: 
+    down = np.linspace(1,0,(Npts-peak))
+    envelope[peak:] = down
+    
+    return envelope
+
+
+def makePitchRing(indexes):
+    pitch_classes = ['c','c#','d','d#','e','f','f#','g','g#','a','a#','b']
+    circle = np.linspace(0,2*np.pi,64)
+    r = 1.0
+    x = r*np.sin(circle)
+    y = r*np.cos(circle)
+
+    # the note locations. 
+    base_dots = np.linspace(0,2*np.pi,13)
+    xd = r*np.sin(base_dots)
+    yd = r*np.cos(base_dots)
+
+    # the text locations
+    r = 1.15
+    xt = r*np.sin(base_dots)
+    yt = r*np.cos(base_dots)
+
+    # ========================
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111, aspect='equal')
+
+    # (0) plot a filled square with a filled circle in it...
+    # patches.Rectangle((x,y,lower left corner),width,height)
+    #ax1.add_patch(patches.Rectangle((0.1, 0.1),0.5,0.5,facecolor="red"))
+
+    ax1.add_patch(patches.Rectangle((-1.25, -1.25),2.5,2.5,facecolor=[0.6, 0.6, 0.6]))
+    ax1.plot(x,y,'k-')
+    ax1.plot(xd,yd,'w.')
+
+    radius_norm = 0.08  # radius normalized, scaled to size of box
+
+    for ind,interval in enumerate(indexes):
+        interval = int(interval)
+        # print(ind,interval)
+        ax1.add_patch(patches.Circle((xd[interval], yd[interval]),radius_norm,facecolor="red")) 
+        ax1.text(xt[interval], yt[interval], pitch_classes[interval])
+        
+    ax1.get_xaxis().set_visible(False)
+    ax1.get_yaxis().set_visible(False)
+    plt.show()
