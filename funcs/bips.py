@@ -28,8 +28,8 @@ class beep:
     def make_bip(self, dur, freqs, envs):
         self.dur = dur
         self.freqs = freqs
-        if type(freqs) is not np.ndarray:
-            self.freqs = np.asarray([freqs]) # make it an array if a single frequency is given
+        #if type(freqs) is not np.ndarray:
+        #    self.freqs = np.asarray([freqs]) # make it an array if a single frequency is given
         self.Nf = len(self.freqs)       # number of frequencies
         self.Nt = int(self.dur * self.fs)    # number of time points
         self.t_vec = np.linspace(0,self.dur,self.Nt) 
