@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 
-class beep:
+class Beep:
 
     def __init__(self):
         self.fs = 44100.0
